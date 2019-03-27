@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 # Enabling eager execution for 
-tf.enable_eager_execution()
+# tf.enable_eager_execution()
 
 class TfRecord:
     
@@ -95,7 +95,7 @@ class DataLoad:
         # # Rescaling the images
         parsed_example['image'] = parsed_example['image'] / 255
 
-        return parsed_example
+        return parsed_example['image'], parsed_example['label']
 
 
     def return_dataset(self):
@@ -104,7 +104,7 @@ class DataLoad:
         dataset = tf.data.TFRecordDataset(self.file_path, num_parallel_reads=16)
 
         dataset = dataset.apply(
-            tf.contrib.data.shuffle_and_repeat(10000, self.epochs)
+            tf.contrib.data.shuffle_and_repeat(100000, self.epochs)
         )
         dataset = dataset.apply(
             tf.contrib.data.map_and_batch(self.parse, self.batch_size)
