@@ -3,10 +3,10 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from tensorboard.plugins.beholder import Beholder
 
-LOGDIR = 'one'
+LOGDIR = 'two'
 BATCH_SIZE = 32
 EPOCHS = 2
-LR = 1e-4
+LR = 1e-5
 
 dataset_train = DataLoad('./HAM10000/data_train.tfrecords', EPOCHS, BATCH_SIZE).return_dataset()
 dataset_test = DataLoad('./HAM10000/data_train.tfrecords', 1, 1000).return_dataset()
@@ -20,8 +20,8 @@ with tf.Graph().as_default():
         features = mod(x_image)   
         
         tf.summary.image('input', x_image, 3)
-        
-        layer = tf.layers.dense(inputs=features, units=7, activation=None)
+        fc = tf.layers.dense(inputs=features, units=200, activation=tf.nn.relu)
+        layer = tf.layers.dense(inputs=fc, units=7, activation=None)
         return layer
 
     with tf.name_scope("inputs"):
@@ -57,8 +57,8 @@ with tf.Graph().as_default():
     iterator = dataset_train.make_one_shot_iterator()
     next_element = iterator.get_next() 
 
-    iterator_test = dataset_test.make_one_shot_iterator()
-    test = iterator_test.get_next() 
+    # iterator_test = dataset_test.make_one_shot_iterator()
+    # test = iterator_test.get_next() 
     with tf.Session() as sess:
             
         beholder = Beholder(LOGDIR)
@@ -66,7 +66,7 @@ with tf.Graph().as_default():
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(LOGDIR)
         writer.add_graph(sess.graph)
-        test_value = sess.run(test)
+        # test_value = sess.run(test)
         i = 0
         while(True):
 
@@ -76,54 +76,59 @@ with tf.Graph().as_default():
                 value = sess.run(next_element)
                 x_ = value[0]
                 y_ = value[1]
-                if i % 312 == 0:
+                if i % 310 == 0:
                     [train_accuracy, s] = sess.run([accuracy, summ], feed_dict={x: x_, y: y_})
-                    [test_accuracy, s] = sess.run([accuracy_val, summ], feed_dict={x: test_value[0][0:300], y: test_value[1][0:300]})
-                    writer.add_summary(s, i)            
+                    writer.add_summary(s, i)      
+                    # [test_accuracy, s] = sess.run([accuracy_val, summ], feed_dict={x: test_value[0][0:100], y: test_value[1][0:100]})
+                    # writer.add_summary(s, i)            
                 sess.run(train_step, feed_dict={x: x_, y: y_})
                 beholder.update(session=sess)
+
+                export_path =  './savedmodel1/' + str(i)
+                builder = tf.saved_model.builder.SavedModelBuilder(export_path)
+
+                tensor_info_x = tf.saved_model.utils.build_tensor_info(x)
+                tensor_info_y = tf.saved_model.utils.build_tensor_info(logits)
+
+                prediction_signature = (
+                tf.saved_model.signature_def_utils.build_signature_def(
+                    inputs={'x_input': tensor_info_x},
+                    outputs={'y_output': tensor_info_y},
+                    method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
+
+                builder.add_meta_graph_and_variables(
+                sess, [tf.saved_model.tag_constants.SERVING],
+                signature_def_map={
+                    tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                        prediction_signature 
+                },
+                )
+                builder.save()
+                if i == 3:
+                    break
             except:
                 break
 
-        export_path =  './savedmodel1'
-        builder = tf.saved_model.builder.SavedModelBuilder(export_path)
 
-        tensor_info_x = tf.saved_model.utils.build_tensor_info(x)
-        tensor_info_y = tf.saved_model.utils.build_tensor_info(logits)
+   
 
-        prediction_signature = (
-        tf.saved_model.signature_def_utils.build_signature_def(
-            inputs={'x_input': tensor_info_x},
-            outputs={'y_output': tensor_info_y},
-            method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
+with tf.Session() as sess:
+    signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+    input_key = 'x_input'
+    output_key = 'y_output'
 
-        builder.add_meta_graph_and_variables(
-        sess, [tf.saved_model.tag_constants.SERVING],
-        signature_def_map={
-            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                prediction_signature 
-        },
-        )
-        builder.save()
-        sess.close()
+    export_path =  './savedmodel1/2'
+    meta_graph_def = tf.saved_model.loader.load(
+               sess,
+              [tf.saved_model.tag_constants.SERVING],
+              export_path)
+    signature = meta_graph_def.signature_def
 
-# with tf.Session() as sess:
-#     signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
-#     input_key = 'x_input'
-#     output_key = 'y_output'
+    x_tensor_name = signature[signature_key].inputs[input_key].name
+    y_tensor_name = signature[signature_key].outputs[output_key].name
 
-#     export_path =  './savedmodel1'
-#     meta_graph_def = tf.saved_model.loader.load(
-#                sess,
-#               [tf.saved_model.tag_constants.SERVING],
-#               export_path)
-#     signature = meta_graph_def.signature_def
+    x = sess.graph.get_tensor_by_name(x_tensor_name)
+    y = sess.graph.get_tensor_by_name(y_tensor_name)
 
-#     x_tensor_name = signature[signature_key].inputs[input_key].name
-#     y_tensor_name = signature[signature_key].outputs[output_key].name
-
-#     x = sess.graph.get_tensor_by_name(x_tensor_name)
-#     y = sess.graph.get_tensor_by_name(y_tensor_name)
-
-#     y_out = sess.run(y, {x: [x_[0]]})
-#     print(y_out)
+    y_out = sess.run(y, {x: [x_[0]]})
+    print(y_out)
