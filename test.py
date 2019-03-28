@@ -30,13 +30,15 @@ def array_argmax(value):
         args.append(index_max)
     
     return args
-dataset_test = DataLoad('./HAM10000/data_train.tfrecords', 1, 100).return_dataset()
+dataset_test = DataLoad('./HAM10000/data_test.tfrecords', 1, 1, 32).return_dataset()
 
 iterator_test = dataset_test.make_one_shot_iterator()
-test = iterator_test.get_next() 
+test = iterator_test.get_next()
+
+i = 0
 with tf.Session() as sess:
 
-    import_path = "./savedmodel/epoch_5"
+    import_path = "./savedmodel/check"
     signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
     input_key = 'x_input'
     output_key = 'y_output'
@@ -49,12 +51,19 @@ with tf.Session() as sess:
     y_tensor_name = signature[signature_key].outputs[output_key].name
     x = sess.graph.get_tensor_by_name(x_tensor_name)
     y = sess.graph.get_tensor_by_name(y_tensor_name)
-    value = sess.run(test)
-    y_out = sess.run(y, {x: value[0]})
+    while(True):
+        try:
+            value_ = sess.run(test)
+            predicted_ = sess.run(y, {x: value_[0]})
+            actual_ = value_[1]
+            if i == 0:
+                actual = actual_
+                predicted = predicted_
+            else:
+                actual = np.concatenate((actual, actual_))
+                predicted = np.concatenate((predicted, predicted_))
+            i = 1
+        except tf.errors.OutOfRangeError:
+            break
 
-
-
-predicted_values = array_argmax(y_out)
-actual_values = array_argmax(value[1])
-
-classification_metrics(actual_values, predicted_values, msg = '')
+classification_metrics(array_argmax(actual), array_argmax(predicted), msg = '')

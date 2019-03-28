@@ -5,11 +5,11 @@ from tensorboard.plugins.beholder import Beholder
 
 LOGDIR = 'one'
 BATCH_SIZE = 32
-EPOCHS = 100
+EPOCHS = 50
 LR = 1e-5
 
-dataset_train = DataLoad('./HAM10000/data_train.tfrecords', EPOCHS, BATCH_SIZE).return_dataset()
-dataset_test = DataLoad('./HAM10000/data_train.tfrecords', 1, 1000).return_dataset()
+dataset_train = DataLoad('./HAM10000/data_train.tfrecords',1, EPOCHS, BATCH_SIZE).return_dataset()
+dataset_valid = DataLoad('./HAM10000/data_valid.tfrecords', 1, 1, 1000).return_dataset()
 
 with tf.Graph().as_default():
 
@@ -76,10 +76,10 @@ with tf.Graph().as_default():
     saver = tf.train.Saver()
 
     iterator = dataset_train.make_one_shot_iterator()
-    next_element = iterator.get_next() 
+    next_element = iterator.get_next()
 
-    # iterator_test = dataset_test.make_one_shot_iterator()
-    # test = iterator_test.get_next() 
+    iterator_valid = dataset_valid.make_one_shot_iterator()
+    valid = iterator_valid.get_next() 
     with tf.Session() as sess:
             
         beholder = Beholder(LOGDIR)
@@ -87,12 +87,12 @@ with tf.Graph().as_default():
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(LOGDIR)
         writer.add_graph(sess.graph)
-        # test_value = sess.run(test)
-        i = 0
+        valid_value = sess.run(valid)
+        i = 1
         j = 1
         while(True):
 
-            try:
+            try:    
                 print(i)
                 i += 1
                 value = sess.run(next_element)
@@ -100,15 +100,17 @@ with tf.Graph().as_default():
                 y_ = value[1]
                 sess.run(train_step, feed_dict={x: x_, y: y_})
                 beholder.update(session=sess)
-                if i % 310 == 0:
+                if (i % 282) == 0:
                     [train_accuracy, s] = sess.run([accuracy, summ], feed_dict={x: x_, y: y_})
+                    writer.add_summary(s, j)                        
+                    [valid_accuracy, s] = sess.run([accuracy_val, summ], feed_dict={x: valid_value[0], y: valid_value[1]})
                     writer.add_summary(s, j)
-                    j += 1      
-                    [test_accuracy, st] = sess.run([accuracy_val, summ], feed_dict={x: test_value[0][0:100], y: test_value[1][0:100]})
-                    writer.add_summary(st, j)            
-                if i % 31000 == 0:
-                    save_model("./savedmodel/epoch_" + str(j))                
-            except:
-               break
+                    # print("epoch train/test", accuracy,"\n",accuracy_val)
+                    j += 1              
+                if (i % (281 * 10)) == 0:
+                    save_model("./savedmodel/epoch_" + str(j) + '_' + str(i))                
+
+            except tf.errors.OutOfRangeError:
+                break
 
 print("Completed...")

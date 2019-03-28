@@ -34,6 +34,7 @@ df = pd.read_csv("./HAM10000/HAM10000_metadata.csv")
 
 # Path to store the tfrecord file
 out_path_train = "./HAM10000/data_train.tfrecords"
+out_path_valid = "./HAM10000/data_valid.tfrecords"
 out_path_test = "./HAM10000/data_test.tfrecords"
 
 image_paths = []
@@ -56,14 +57,17 @@ data['labels'] = labels
 
 data = data.sample(frac=1)
 
-train = data.iloc[0:9500, :]
-test = data.iloc[9500:10014, :]
+train = data.iloc[0:9000, :]
+valid = data.iloc[9000:9100, :]
+test = data.iloc[9100:10000, :]
 # Object of the dataset.
 dataset_train = TfRecord(train['paths'], train['labels'], out_path_train)
+dataset_valid = TfRecord(valid['paths'], valid['labels'], out_path_valid)
 dataset_test = TfRecord(test['paths'], test['labels'], out_path_test)
 
 # Converts and stores to the out_path.
 dataset_train.convert_to_tfrecord()
+dataset_valid.convert_to_tfrecord()
 dataset_test.convert_to_tfrecord()
 
 
