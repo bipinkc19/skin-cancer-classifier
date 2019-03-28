@@ -3,8 +3,8 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from tensorboard.plugins.beholder import Beholder
 
-LOGDIR = 'one'
-BATCH_SIZE = 32
+LOGDIR = './tensorboard_logs/batch_64_lr_1e/epoch_41_5640'
+BATCH_SIZE = 64
 EPOCHS = 50
 LR = 1e-5
 
@@ -100,15 +100,15 @@ with tf.Graph().as_default():
                 y_ = value[1]
                 sess.run(train_step, feed_dict={x: x_, y: y_})
                 beholder.update(session=sess)
-                if (i % 282) == 0:
+                if (i % ((9000 // BATCH_SIZE) + 1)) == 0:
                     [train_accuracy, s] = sess.run([accuracy, summ], feed_dict={x: x_, y: y_})
                     writer.add_summary(s, j)                        
                     [valid_accuracy, s] = sess.run([accuracy_val, summ], feed_dict={x: valid_value[0], y: valid_value[1]})
                     writer.add_summary(s, j)
                     # print("epoch train/test", accuracy,"\n",accuracy_val)
                     j += 1              
-                if (i % (281 * 10)) == 0:
-                    save_model("./savedmodel/epoch_" + str(j) + '_' + str(i))                
+                if (i % (((9000 // BATCH_SIZE) + 1) * 10)) == 0:
+                    save_model("./savedmodel/batch_64_lr_1e/epoch_" + str(j) + '_' + str(i))                
 
             except tf.errors.OutOfRangeError:
                 break
