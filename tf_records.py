@@ -41,7 +41,7 @@ class TfRecord:
                 img = plt.imread(image)
                 
                 # Resize and scale.
-                img = cv2.resize(img, (299, 299))
+                img = cv2.resize(img, (224, 224))
                
                 # Convert to binary.
                 img_bytes = img.tostring()

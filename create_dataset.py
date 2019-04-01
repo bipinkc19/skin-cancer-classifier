@@ -30,18 +30,18 @@ def label_to_array(label):
         return([0, 0, 0, 0, 0, 0, 0])
 
 # Read the metadata for images and their corresponding labels.
-df = pd.read_csv("./HAM10000/HAM10000_metadata.csv")
+df = pd.read_csv("./augmented_image/metadata.csv")
 
 # Path to store the tfrecord file
-out_path_train = "./HAM10000/data_train.tfrecords"
-out_path_valid = "./HAM10000/data_valid.tfrecords"
-out_path_test = "./HAM10000/data_test.tfrecords"
+out_path_train = "./augmented_image/data_train.tfrecords"
+out_path_valid = "./augmented_image/data_valid.tfrecords"
+out_path_test = "./augmented_image/data_test.tfrecords"
 
 image_paths = []
 labels = []
 
 for image, label in zip(df['image_id'], df['dx']):
-    image_path = './HAM10000/' + image + '.jpg'
+    image_path = './augmented_image/' + image + '.jpg'
     label_num = label_to_array(label)
 
     # Exceptions where the label doesn't matches any of the labels are discarded.
@@ -57,9 +57,13 @@ data['labels'] = labels
 
 data = data.sample(frac=1)
 
-train = data.iloc[0:9000, :]
-valid = data.iloc[9000:9100, :]
-test = data.iloc[9100:10000, :]
+train_ = int(len(data) * 0.9)
+test_ = int(len(data) - 100)
+
+train = data.iloc[0:train_, :]
+test = data.iloc[train_:test_, :]
+valid = data.iloc[test_:len(data), :]
+
 # Object of the dataset.
 dataset_train = TfRecord(train['paths'], train['labels'], out_path_train)
 dataset_valid = TfRecord(valid['paths'], valid['labels'], out_path_valid)
