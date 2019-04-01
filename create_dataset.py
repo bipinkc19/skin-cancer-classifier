@@ -1,5 +1,6 @@
 import pandas as pd
 from tf_records import TfRecord
+from augment_image import augment_images
 
 def label_to_array(label):
     ''' One hot encode the labels. '''
@@ -30,18 +31,18 @@ def label_to_array(label):
         return([0, 0, 0, 0, 0, 0, 0])
 
 # Read the metadata for images and their corresponding labels.
-df = pd.read_csv("./augmented_image/metadata.csv")
+df = pd.read_csv("./HAM10000/HAM10000_metadata.csv")
 
 # Path to store the tfrecord file
-out_path_train = "./augmented_image/data_train.tfrecords"
-out_path_valid = "./augmented_image/data_valid.tfrecords"
-out_path_test = "./augmented_image/data_test.tfrecords"
+out_path_train = "./tfrecord_files/data_train.tfrecords"
+out_path_valid = "./tfrecord_files/data_valid.tfrecords"
+out_path_test = "./tfrecord_files/data_test.tfrecords"
 
 image_paths = []
 labels = []
 
 for image, label in zip(df['image_id'], df['dx']):
-    image_path = './augmented_image/' + image + '.jpg'
+    image_path = './HAM10000/' + image + '.jpg'
     label_num = label_to_array(label)
 
     # Exceptions where the label doesn't matches any of the labels are discarded.
@@ -64,8 +65,11 @@ train = data.iloc[0:train_, :]
 test = data.iloc[train_:test_, :]
 valid = data.iloc[test_:len(data), :]
 
+train_augmented_paths, train_augmented_labels = augment_images(train['paths'], train['labels'])
+
+
 # Object of the dataset.
-dataset_train = TfRecord(train['paths'], train['labels'], out_path_train)
+dataset_train = TfRecord(train_augmented_paths, train_augmented_labels, out_path_train)
 dataset_valid = TfRecord(valid['paths'], valid['labels'], out_path_valid)
 dataset_test = TfRecord(test['paths'], test['labels'], out_path_test)
 
