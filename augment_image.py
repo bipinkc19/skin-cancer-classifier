@@ -62,6 +62,7 @@ def change_brightness(image_array):
 
     return img
 
+
 available_transformations = {
     'rotate': random_rotation,
     'noise': random_noise,
@@ -118,4 +119,3 @@ def augment_images(image_paths, labels):
     to_write.to_csv('./augmented_image/meta_augmented.csv')
 
     return(all_paths, all_labels)
-

@@ -71,9 +71,15 @@ valid = data.iloc[test_:len(data), :]
 # Returns the Augmented image's path and label for only train set.
 train_augmented_paths, train_augmented_labels = augment_images(train['paths'], train['labels'])
 
+train_augmented = pd.DataFrame()
+train_augmented['paths'] = train_augmented_paths
+train_augmented['labels'] = train_augmented_labels
+
+# Shuffling the train data.
+train_augmented = train_augmented.sample(frac=1)
 
 # Object of the dataset.
-dataset_train = TfRecord(train_augmented_paths, train_augmented_labels, out_path_train)
+dataset_train = TfRecord(train_augmented['paths'], train_augmented['labels'], out_path_train)
 dataset_valid = TfRecord(valid['paths'], valid['labels'], out_path_valid)
 dataset_test = TfRecord(test['paths'], test['labels'], out_path_test)
 
