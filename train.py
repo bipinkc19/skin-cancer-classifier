@@ -3,10 +3,11 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from tensorboard.plugins.beholder import Beholder
 
-LOGDIR = 'one'
-BATCH_SIZE = 32
+LOGDIR = './tensorboard_logs/batch_64_lr_1e-resnetv2_100/'
+BATCH_SIZE = 64
 EPOCHS = 50
 LR = 1e-5
+DATA_SIZE = 9000
 
 dataset_train = DataLoad('./HAM10000/data_train.tfrecords',1, EPOCHS, BATCH_SIZE).return_dataset()
 dataset_valid = DataLoad('./HAM10000/data_valid.tfrecords', 1, 1, 1000).return_dataset()
@@ -14,9 +15,11 @@ dataset_valid = DataLoad('./HAM10000/data_valid.tfrecords', 1, 1, 1000).return_d
 with tf.Graph().as_default():
 
     def network(x):
-        module_url = "https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1"
+        # module_url = "https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1"
+        module_url = "https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/feature_vector/2"
+        
         mod = hub.Module(module_url)
-        x_image = tf.reshape(x, [-1, 299, 299, 3])
+        x_image = tf.reshape(x, [-1, 224, 224, 3])
         features = mod(x_image)   
         
         tf.summary.image('input', x_image, 3)
@@ -46,7 +49,7 @@ with tf.Graph().as_default():
 
 
     with tf.name_scope("inputs"):
-        x = tf.placeholder(tf.float32, shape=[None, 299 * 299 * 3], name="x")
+        x = tf.placeholder(tf.float32, shape=[None, 224 * 224 * 3], name="x")
 
         y = tf.placeholder(tf.float32, shape=[None, 7], name="labels")
  
@@ -100,15 +103,15 @@ with tf.Graph().as_default():
                 y_ = value[1]
                 sess.run(train_step, feed_dict={x: x_, y: y_})
                 beholder.update(session=sess)
-                if (i % 282) == 0:
+                if (i % ((DATA_SIZE // BATCH_SIZE) + 1)) == 0:
                     [train_accuracy, s] = sess.run([accuracy, summ], feed_dict={x: x_, y: y_})
                     writer.add_summary(s, j)                        
                     [valid_accuracy, s] = sess.run([accuracy_val, summ], feed_dict={x: valid_value[0], y: valid_value[1]})
                     writer.add_summary(s, j)
                     # print("epoch train/test", accuracy,"\n",accuracy_val)
                     j += 1              
-                if (i % (281 * 10)) == 0:
-                    save_model("./savedmodel/epoch_" + str(j) + '_' + str(i))                
+                if (i % (((DATA_SIZE // BATCH_SIZE) + 1) * 10)) == 0:
+                    save_model("./savedmodel/batch_64_lr_1e_resnetv2_100/epoch_" + str(j) + '_' + str(i))                
 
             except tf.errors.OutOfRangeError:
                 break
