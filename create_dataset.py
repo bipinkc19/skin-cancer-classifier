@@ -41,6 +41,7 @@ out_path_test = "./tfrecord_files/data_test.tfrecords"
 image_paths = []
 labels = []
 
+# Making a list of the images read from the metadata csv.
 for image, label in zip(df['image_id'], df['dx']):
     image_path = './HAM10000/' + image + '.jpg'
     label_num = label_to_array(label)
@@ -56,8 +57,10 @@ data = pd.DataFrame()
 data['paths'] = image_paths
 data['labels'] = labels
 
+# Shuffling the data
 data = data.sample(frac=1)
 
+# Train, test, valid split. Here 90% are train, 100 data are valid and other test.
 train_ = int(len(data) * 0.9)
 test_ = int(len(data) - 100)
 
@@ -65,6 +68,7 @@ train = data.iloc[0:train_, :]
 test = data.iloc[train_:test_, :]
 valid = data.iloc[test_:len(data), :]
 
+# Returns the Augmented image's path and label for only train set.
 train_augmented_paths, train_augmented_labels = augment_images(train['paths'], train['labels'])
 
 
