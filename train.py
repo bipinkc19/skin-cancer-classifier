@@ -5,7 +5,7 @@ from tensorboard.plugins.beholder import Beholder
 
 LOGDIR = './tensorboard_logs/augmented_batch_64_lr_1e-resnetv2_100/'
 BATCH_SIZE = 128
-EPOCHS = 25
+EPOCHS = 50
 LR = 1e-5
 DATA_SIZE = 40655
 
