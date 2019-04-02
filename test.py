@@ -31,7 +31,7 @@ def array_argmax(value):
     
     return args
     
-dataset_test = DataLoad('./HAM10000/data_test.tfrecords', 1, 1, 32).return_dataset()
+dataset_test = DataLoad('./tfrecord_files/data_test.tfrecords', 1, 1, 32).return_dataset()
 
 iterator_test = dataset_test.make_one_shot_iterator()
 test = iterator_test.get_next()
@@ -39,7 +39,7 @@ test = iterator_test.get_next()
 i = 0
 with tf.Session() as sess:
 
-    import_path = "./savedmodel/batch_64_lr_1e_resnetv2_100/..."
+    import_path = "./savedmodel/augmented_batch_64_lr_1e_resnetv2_100/epoch_21_6360"
     signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
     input_key = 'x_input'
     output_key = 'y_output'

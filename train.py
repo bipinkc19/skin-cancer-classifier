@@ -3,14 +3,14 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from tensorboard.plugins.beholder import Beholder
 
-LOGDIR = './tensorboard_logs/batch_64_lr_1e-resnetv2_100/'
-BATCH_SIZE = 64
+LOGDIR = './tensorboard_logs/augmented_batch_64_lr_1e-resnetv2_100/'
+BATCH_SIZE = 128
 EPOCHS = 50
 LR = 1e-5
-DATA_SIZE = 9000
+DATA_SIZE = 40655
 
-dataset_train = DataLoad('./HAM10000/data_train.tfrecords',1, EPOCHS, BATCH_SIZE).return_dataset()
-dataset_valid = DataLoad('./HAM10000/data_valid.tfrecords', 1, 1, 1000).return_dataset()
+dataset_train = DataLoad('./tfrecord_files/data_train.tfrecords',1, EPOCHS, BATCH_SIZE).return_dataset()
+dataset_valid = DataLoad('./tfrecord_files/data_valid.tfrecords', 1, 1, 1000).return_dataset()
 
 with tf.Graph().as_default():
 
@@ -111,7 +111,7 @@ with tf.Graph().as_default():
                     # print("epoch train/test", accuracy,"\n",accuracy_val)
                     j += 1              
                 if (i % (((DATA_SIZE // BATCH_SIZE) + 1) * 10)) == 0:
-                    save_model("./savedmodel/batch_64_lr_1e_resnetv2_100/epoch_" + str(j) + '_' + str(i))                
+                    save_model("./savedmodel/augmented_batch_64_lr_1e_resnetv2_100/epoch_" + str(j) + '_' + str(i))                
 
             except tf.errors.OutOfRangeError:
                 break
